@@ -2,8 +2,8 @@ name: Fric Frog Stock Watch
 
 on:
   schedule:
-    # 5分ごと（GitHubの最短間隔。混雑時は遅延することがあります）
-    - cron: '*/5 * * * *'
+    # 10分ごと（GitHubの最短間隔。混雑時は遅延することがあります）
+    - cron: '*/10 * * * *'
   workflow_dispatch:
     inputs:
       test:
