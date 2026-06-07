@@ -1,0 +1,45 @@
+name: Fric Frog Stock Watch
+
+on:
+  schedule:
+    # 5分ごと（GitHubの最短間隔。混雑時は遅延することがあります）
+    - cron: '*/5 * * * *'
+  workflow_dispatch:
+    inputs:
+      test:
+        description: 'テスト通知を送る場合は true'
+        default: 'false'
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check stock and notify
+        env:
+          NTFY: ${{ secrets.NTFY_TOPIC }}
+          PRODUCT: https://www.fricshop.com/products/fric-official-frog
+        run: |
+          # 手動テスト実行（必ず通知を送る）
+          if [ "${{ github.event.inputs.test }}" = "true" ]; then
+            curl -s -X POST "https://ntfy.sh/$NTFY" \
+              -H 'Title: Fric Watcher Test' \
+              -H 'Tags: white_check_mark' \
+              -d "GitHub Actions test OK - $PRODUCT"
+            echo "test notification sent"
+            exit 0
+          fi
+
+          # 在庫JSONを取得
+          JSON=$(curl -s -A 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)' "$PRODUCT.js")
+
+          # available:true があれば在庫あり
+          if echo "$JSON" | grep -Eq '"available":[[:space:]]*true'; then
+            curl -s -X POST "https://ntfy.sh/$NTFY" \
+              -H 'Title: Fric Frog IN STOCK' \
+              -H 'Priority: urgent' \
+              -H 'Tags: frog,shopping_cart' \
+              -d "Fric Frog is BACK IN STOCK! Buy now: $PRODUCT"
+            echo "IN STOCK - notification sent"
+          else
+            echo "still sold out"
+          fi
